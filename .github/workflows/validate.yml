@@ -1,0 +1,36 @@
+name: GitOps validation
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install Helm v4.0.0 and verify checksum
+        shell: bash
+        run: |
+          set -euo pipefail
+          helm_version="v4.0.0"
+          archive="helm-${helm_version}-linux-amd64.tar.gz"
+          curl --fail --silent --show-error --location \
+            "https://get.helm.sh/${archive}" --output "/tmp/${archive}"
+          echo "c77e9e7c1cc96e066bd240d190d1beed9a6b08060b2043ef0862c4f865eca08f  /tmp/${archive}" \
+            | sha256sum --check --status
+          tar -xzf "/tmp/${archive}" -C /tmp
+          install -D -m 0755 /tmp/linux-amd64/helm "$HOME/.local/bin/helm"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Test promotion script
+        run: tests/test_promote.sh
+
+      - name: Validate charts and policies
+        run: tests/validate.sh

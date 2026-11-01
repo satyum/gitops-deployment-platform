@@ -1,0 +1,58 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: gitops-app-baseline
+  annotations:
+    policies.kyverno.io/description: Essential workload rules for the GitOps environments.
+spec:
+  background: true
+  rules:
+    - name: require-non-root
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaces: [gitops-dev, gitops-prod]
+      validate:
+        failureAction: Enforce
+        message: Pods must set spec.securityContext.runAsNonRoot to true.
+        pattern:
+          spec:
+            securityContext:
+              runAsNonRoot: true
+    - name: require-resources
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaces: [gitops-dev, gitops-prod]
+      validate:
+        failureAction: Enforce
+        message: Containers must set CPU and memory requests and limits.
+        pattern:
+          spec:
+            containers:
+              - resources:
+                  requests:
+                    cpu: "?*"
+                    memory: "?*"
+                  limits:
+                    cpu: "?*"
+                    memory: "?*"
+    - name: require-versioned-image
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaces: [gitops-dev, gitops-prod]
+      validate:
+        failureAction: Enforce
+        message: Images must use an immutable x.y.z tag, not a moving tag such as dev or latest.
+        foreach:
+          - list: request.object.spec.containers
+            deny:
+              conditions:
+                any:
+                  - key: "{{ regex_match('^.+:[0-9]+\\.[0-9]+\\.[0-9]+$', element.image) }}"
+                    operator: Equals
+                    value: false

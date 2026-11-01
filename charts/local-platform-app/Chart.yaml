@@ -1,0 +1,6 @@
+apiVersion: v2
+name: local-platform-app
+description: A small FastAPI application for the local Kubernetes platform project
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

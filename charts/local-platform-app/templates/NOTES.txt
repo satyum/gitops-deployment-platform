@@ -1,0 +1,6 @@
+The application is deployed in namespace {{ .Release.Namespace }}.
+
+Forward the Service to localhost:
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "local-platform-app.fullname" . }} 8081:{{ .Values.service.port }}
+
+Then check http://127.0.0.1:8081/health and http://127.0.0.1:8081/metrics.

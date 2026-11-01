@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: local-platform-prod
+  namespace: argocd
+spec:
+  project: local-platform
+  source:
+    repoURL: https://github.com/satyum/gitops-deployment-platform.git
+    targetRevision: main
+    path: charts/local-platform-app
+    helm:
+      releaseName: local-platform-app
+      valueFiles:
+        - ../../environments/prod/values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: gitops-prod
+  syncPolicy:
+    # No automated block: a manual sync is the production promotion gate.
+    managedNamespaceMetadata:
+      labels:
+        pod-security.kubernetes.io/enforce: restricted
+    syncOptions:
+      - CreateNamespace=true

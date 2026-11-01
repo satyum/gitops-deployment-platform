@@ -1,0 +1,21 @@
+replicaCount: 1
+
+image:
+  repository: local-platform-app
+  tag: dev
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: http
+
+containerPort: 8000
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 96Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi

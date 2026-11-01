@@ -1,0 +1,10 @@
+# Minimal single-node install. Access is through kubectl port-forward only.
+dex:
+  enabled: false
+notifications:
+  enabled: false
+applicationSet:
+  replicas: 0
+server:
+  service:
+    type: ClusterIP

@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: local-platform
+  namespace: argocd
+spec:
+  description: Local GitOps environments for local-platform-app
+  sourceRepos:
+    - https://github.com/satyum/gitops-deployment-platform.git
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: gitops-dev
+    - server: https://kubernetes.default.svc
+      namespace: gitops-prod
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+  namespaceResourceWhitelist:
+    - group: apps
+      kind: Deployment
+    - group: ""
+      kind: Service

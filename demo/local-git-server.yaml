@@ -1,0 +1,95 @@
+# Disposable, read-only Git server for proving GitOps before a hosted repository exists.
+# History lives in an emptyDir, so it disappears with the Pod and is never published.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: gitops-git
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: local-git
+  namespace: gitops-git
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: local-git
+  template:
+    metadata:
+      labels:
+        app: local-git
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: git
+          # Reuses the Argo CD image already on the node, which includes git-daemon.
+          image: quay.io/argoproj/argocd:v3.5.6
+          imagePullPolicy: IfNotPresent
+          command:
+            - git
+            - daemon
+            - --reuseaddr
+            - --base-path=/srv/git
+            - --export-all
+            - --informative-errors
+            - /srv/git
+          env:
+            - name: HOME
+              value: /srv/home
+          ports:
+            - name: git
+              containerPort: 9418
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: git
+              mountPath: /srv/git
+            - name: work
+              mountPath: /srv/work
+            - name: home
+              mountPath: /srv/home
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: git
+          emptyDir: {}
+        - name: work
+          emptyDir: {}
+        - name: home
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: local-git
+  namespace: gitops-git
+spec:
+  selector:
+    app: local-git
+  ports:
+    - name: git
+      port: 9418
+      targetPort: git

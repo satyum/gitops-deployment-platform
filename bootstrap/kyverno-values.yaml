@@ -1,0 +1,9 @@
+# Admission and background scanning only, to keep the local footprint small.
+admissionController:
+  replicas: 1
+backgroundController:
+  replicas: 1
+cleanupController:
+  enabled: false
+reportsController:
+  enabled: false
